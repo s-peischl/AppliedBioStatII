@@ -1,0 +1,111 @@
+---
+title: "Practical Part Appplied Biostatistics II"
+author: "Stephan Peischl"
+date: "3/15/2020"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Exercise 7
+
+A researcher collected daffodils from four sides of a building and from an open area nearby.
+She wondered whether the average stem length of a daffodil depends on its location. The data set is
+available as daffodils.csv from ILIAS.
+a) State the null hypothesis of an ANOVA model for this problem in words and as a formula.
+
+The null hypothesis is that all locations are the same and there is no differnce in growth.
+
+Formula:
+Yij = observation j in group i
+ai= groupeffect of the locations, East = intercept
+
+$Y_{ij} = \mu + a_i + E_{ij}$   with  $E_{ij} ~ N(\mu,\sigma)$
+
+H0: aNorth = aOpen = aWest = aSouth = 0
+
+
+b) Based on the boxplot, does it appear that the null hypothesis is true?
+
+The a for the location Open seems to be different from the others
+
+
+c) Fit an ANOVA model to the data and test the null hypothesis from a) on a significance level of 10%.
+
+```{r}
+flower_data <-read.table('daffodils.csv', header = T, sep = ',')
+
+flower_anova <-lm(Length ~ Side, data = flower_data)
+
+summary(flower_anova)
+```
+
+The side Open is different from the others with a p-value of 0.00811.
+
+
+d) Does the ANOVA model fit well to the data? Perform a residual analysis.
+
+```{r}
+plot(fitted(flower_anova), flower_anova$residuals)
+qqnorm(flower_anova$residuals)
+
+library(car)
+qqPlot(flower_anova$residuals)
+```
+
+The residuals seem do not show any major skew. The model seems to fit well. 
+
+
+e) Which locations (sides of the building and open area) are not significantly different on a 5% level?
+Use Bonferroni adjusted pairwise t-tests.
+
+```{r}
+pairwise.t.test(flower_data$Length, flower_data$Side, p.adjust.method = 'bonferroni')
+help("pairwise.t.test")
+```
+The t-test reveals that all locations execept Open and South don't differ from each other
+given a significance level of 5%.
+
+# Exercise 8
+
+A researcher studied the flexibility of women after taking different sports courses. The
+
+exibility was measured by the spinal extension, a measure of how far the women could bend her
+back.
+The ANOVA table of the data set looks as follows:
+
+Analysis of Variance Table
+
+Response: SpineExtension
+
+Df Sum Sq Mean Sq F value Pr(>F)
+
+Activity 2 7.0357 3.5178 6.0667 0.006882 **
+
+Residuals 26 15.0764 0.5799
+
+\-\-\-
+
+Signif. codes:
+
+0 \*\*\* 0.001 \*\* 0.01 \* 0.05 . 0.1  \` \`  1
+
+a) How many groups (sports activities) were in the experiment? How many women participated?
+
+Activity has 2 degrees of freedom. We use g-1 for the ANOVA so the original amount of
+groups=g was 3.
+The residuals have 26 degrees of freedom. We use n-g for the ANOVa so the original 
+n was 26+3=29
+
+
+b) What can you say on a 5% level about the null hypothesis that all sport courses lead to the same flexibility?
+
+We see that the p-value is clearly below the significance level, so the sports are not all 
+the same. We can not say which ones are different
+
+c) What is the pooled standard deviation, spool?
+
+spool^2 = the mean square of errors
+-> spool = sqrt(mean square of errors) = sqrt(0.5799)
