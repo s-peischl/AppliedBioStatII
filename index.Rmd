@@ -9,6 +9,245 @@ output: html_document
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
+
+# Exercise 3
+
+For Ex 3a the data is read in and a simple linear model built
+
+```{r farm}
+farm = read.table("farm.dat", header = TRUE)
+farm.fit <- lm(Dollar ~ cows, data = farm)
+summary(farm.fit)
+```
+
+For Ex 3b the Confidence interval for 0, 20 and exactly 8.85 cows is looked at:
+The first attempt gives it for every cow composition
+
+```{r Ex 3b}
+predict(farm.fit, interval = "confidence")
+predict(farm.fit, newdataframe = data.frame(cows=c(0,20,8.85), interval = "confidence"))
+```
+For Ex 3c first a simple regression model Dollar ~ Acres is done and then a multiple regression model with Dollars against I&A
+```{r Ex3c}
+farm.fit2 <- lm(Dollar ~ acres, data = farm)
+summary(farm.fit2)
+
+farm.fit3 <- lm(Dollar ~ acres + cows, data = farm)
+summary(farm.fit3)
+```
+
+Comparing the three models it get clear that the cows are highly influencing the amount of money even if there is a non-significant variable as the acres
+
+
+# Excercise 4:
+In this exercise, we again consider the air pollution data set presented in the lecture. In
+a study on the contribution of air pollution to mortality, General Motors collected data from 60 US cities. The **dependent** variable is the age adjusted mortality (variable **Mortality**). The data includes variables measuring demographic characteristics of the cities, variables measuring climate characteristics, and variables recording the pollution potential of three different air pollutants.
+
+### Ex 4a
+Get an overview of the data and account for possible problems. Which of the variables need to be transformed?
+Do Marginal histograms:
+```{r}
+airp <- read.csv("airpollution.csv")
+airp$City <- NULL #deletes the Cities names (da x in for loop numerisch sein muss)
+par(mfrow = c(4, 4), mar = c(1.5, 2, 1.5, 0.5), cex = 0.5) # for a display
+
+for (i in 1:ncol(airp)) hist(airp[, i], freq = FALSE, main = colnames(airp)[i],
+xlab = "", ylab = "")
+```
+
+As it can be seen the following variables need transformance:
+```{r}
+airp$Pop <- log(airp$Pop)
+airp$HC <- log(airp$HC)
+airp$NOx <- log(airp$NOx)
+airp$SO2 <- log(airp$SO2)
+names(airp)[names(airp)=="Pop"]<-"logPop"
+names(airp)[names(airp)=="HC"]<- "logHC"
+names(airp)[names(airp)=="NOx"]<-"logNOx"
+names(airp)[names(airp)=="SO2"]<-"logSO2"
+```
+
+### Ex4b:
+Carry out a multiple linear regression containing all variables. Does the model it well? Check
+the residuals.
+
+```{r}
+airp.fit <- lm(Mortality ~ ., data = airp)
+summary(airp.fit)
+```
+
+#### Residuals:
+Tukey-Anscombe plot
+QQ-Plot
+```{r}
+
+par(mfrow = c(1,2), cex = 0.5)
+plot(fitted(airp.fit), resid(airp.fit), xlab = "Fitted values", ylab = "Residuals", main = "Tukey-Anscombe plot")
+library("car") # needed for qqPlot
+qqPlot(resid(airp.fit), dist = "norm", mean = mean(resid(airp.fit)), sd = sd(resid(airp.fit)), xlab = "Theoretical quantiles", ylab = "Empirical quantiles", main = "QQ Plot of Residuals")
+```
+### Ex 4c:
+Now take all the non-significant variables out of the model and compute the regression again.
+Compare your results to part b.).
+
+```{r}
+airp.fit2 <- lm(Mortality ~ JanTemp + Rain + NonWhite + logNOx, data = airp)
+summary(airp.fit2)
+```
+Fewer variables --> bigger Residuals and R^2 decreased
+Still high explanatory power
+Watch out for dependent variables!!!
+
+
+
+# Excercise 5 - Mauro Gwerder, Chiara Durrer, Nagabhushana Priyanka
+
+On February 9, 2014, Swiss voters accepted the initiative "Against Mass Immigration". In
+this exercise, we will try to predict the acceptance in each canton based on geographic and demographic
+data.
+
+```{r}
+immi <- read.table("massimmigration.csv", header = TRUE, sep = '\t')
+```
+
+### a.)  
+Plot acceptance versus the fraction of foreigners, and plot a linear model to the data. Does the model fit well? 
+
+```{r}
+rownames(immi) <- immi$canton
+immi$canton <- NULL #remove the cantons
+plot(yes ~ foreigners, data = immi)
+```
+
+```{r}
+model1.fit <- lm(yes ~ foreigners, data = immi)
+summary(model1.fit)
+```
+
+The summary of our model shows that both parameters have a significant p-value, and the F-statistic also shows
+significance. However, the coefficient of determination (multiple R-squared) shows that only 26% of all variation can be explained
+via the linear model. This means that this model is valid and significant, but not very strong.
+```{r}
+plot(yes ~ foreigners, data = immi)
+abline(model1.fit)
+```
+    
+  The model does not fit too well, many outliers can be seen, but a negative correlation can be seen. It seems that a higher amount of foreigners would lead in general to a smaller acceptance of the initiative.
+
+Residual-Analysis:
+```{r, include=FALSE}
+library(car) # needed for qqPlot
+```
+```{r}
+par(mfrow = c(1, 2), cex = 0.5)
+plot(fitted(model1.fit), resid(model1.fit), xlab = "Fitted values", ylab = "Residuals", main = "Tukey-Anscombe plot")
+
+qqPlot(resid(model1.fit), dist = "norm", mean = mean(resid(model1.fit)), sd = sd(resid(model1.fit)), xlab = "Theoretical quantiles", ylab = "Empirical quantiles", main = "Q-Q plot of residuals")
+```
+The plots seems to match the assumptions well enough so they can be used without any transformations. 
+The residuals are thus normally-distributed and the variance doesn't show any trends.
+
+
+
+### b.)
+Plot a confidence band and prediction intervals into the plot of a.), confidence level of 90%. What is the difference between the two?
+
+
+```{r}
+x.val <- seq(0,40, by=1)
+pred.interval <- as.data.frame(predict(model1.fit, level = 0.9, newdata = data.frame(foreigners=x.val), interval = "prediction"))
+head(pred.interval)
+```
+The prediction interval shows the range in where new measurements could fall given the linear model and the error-term.
+```{r}
+x.val <- seq(0,40, by=1)
+conf.band <- as.data.frame(predict(model1.fit, level = 0.9, newdata = data.frame(foreigners=x.val), interval = "confidence"))
+```
+The confidence interval for the linear model indicates the accuracy of the estimation of where the line of the linear model is.
+
+```{r}
+plot(yes ~ foreigners, data = immi)
+lines(x.val, conf.band$lwr, col="blue", lty=3)
+lines(x.val, conf.band$upr, col="blue", lty=3)
+lines(x.val, pred.interval$lwr, col= "red", lty=3)
+lines(x.val, pred.interval$upr, col="red", lty=3)
+lines(x.val, conf.band$fit, lwd=2)
+
+```
+
+### c.)
+How well does the fraction of foreigners explain the acceptance in the different cantons? Calculate the coefcient of determination R2 and the F statistic "by hand", i.e. only using the R functions resid, fitted and mean. Check your results with the output of summary.
+
+
+#### R Square by hand:
+```{r}
+Y_hat <- fitted(model1.fit)
+Y_Bar <- mean(immi$yes)
+
+R_square <- sum((Y_hat - Y_Bar)^2)/ sum((immi$yes - Y_Bar)^2)
+R_square
+```
+  R_square or coefficient of determination divides the sum of squared residuals between the mean and the model by the sum of squared residuals between the mean and the actual datapoints. This then gives an indication of how much variation is explained by the model.
+  
+
+#### F-Statistic by hand:
+```{r}
+n <- nrow(immi)
+q <- 2 #The number of regression parameters needed to fit
+F_stat <- (sum((Y_hat - Y_Bar)^2)/(q-1))/(sum((immi$yes - Y_hat)^2)/(n-q))
+F_stat
+```
+The F-statistic has the null-hypothesis that all regression-coefficients are equal to 0.  
+
+
+#### Check if it is correct:
+```{r}
+summary(model1.fit)
+```
+
+--> Our results correspond to the summary-statistics of this model.
+
+### d.)
+Select the best linear model as follows:
+1. Add a variable density to the data set, defined as the number of inhabitants per area.
+2. Start with the full regression model.
+3. As long as there is an explanatory variable with a p-value above 5%:
+  Remove the least significant variable.
+  Keep the new model if the larger model is not significantly better based on an F-test.
+
+#### Add variable density and start with the full regression model
+```{r}
+immi$density <- immi$inhabitants/immi$area
+model2_full <- lm(yes ~ ., data = immi)
+summary(model2_full)
+```
+
+####  Step-by step removal of least significant variables
+First -inhabitants
+```{r}
+model2_reduced_1 <- update(model2_full, . ~ .-inhabitants)
+anova(model2_reduced_1, model2_full)
+summary(model2_reduced_1)
+```
+
+Second -area
+```{r}
+model2_reduced_2 <- update(model2_reduced_1, . ~ . -area)
+anova(model2_reduced_2, model2_reduced_1)
+summary(model2_reduced_2)
+```
+
+third -density
+```{r}
+model2_reduced_3 <- update(model2_reduced_2, . ~ . -density)
+anova(model2_reduced_3, model2_reduced_2)
+summary(model2_reduced_3)
+```
+This last model is the same as our model from the beginning. As the anova-tests were never significant, we can assume that this very slim model is sufficiant.  
+  Other possibilities for selecting the best linear model:  
+  - likelihood-ratio-test (has p-values, only works with nested models)  
+  - AIC Backward- or Forward-selection (also works with non-nested models, no p-values)
+
 # Exercise 7
 
 A researcher collected daffodils from four sides of a building and from an open area nearby.
