@@ -2,7 +2,10 @@
 title: "Practical Part Appplied Biostatistics II"
 author: "Stephan Peischl"
 date: "3/15/2020"
-output: html_document
+output:
+  html_document:
+    toc: true
+    toc_float: true
 ---
 
 ```{r setup, include=FALSE}
@@ -345,7 +348,9 @@ This last model is the same as our model from the beginning. As the anova-tests 
   - AIC Backward- or Forward-selection (also works with non-nested models, no p-values)
 
 
-# Exercise 7 (by Jacqueline Wyss)
+# Exercise 7 
+
+## by Jacqueline Wyss
 
 
 A researcher collected daffodils from four sides of a building and from an open area nearby.
@@ -404,6 +409,84 @@ help("pairwise.t.test")
 ```
 The t-test reveals that all locations execept Open and South don't differ from each other
 given a significance level of 5%.
+
+
+
+## by Luzia Renggli, Olivier Magnin & Tobias Blatter
+
+```{r }
+library(car)
+```
+
+##### A researcher collected daffodils from four sides of a building and from an open area nearby. She wondered whether the average stem length of a daffodil depends on its location. The data set is available as `daffodils.csv` from ILIAS.
+
+<p style="text-align:center;"><img src="daffodils.png" alt="flowers" width="500"></p>
+
+##### a) State the null hypothesis of an ANOVA model for this problem in words and as a formula.
+
+ANOVA model: 
+
+$Y_{ji} = \mu + \alpha_i + E_{ij}\ $ with $\alpha_i$ for the group effect for the 5 groups of data: \{\"East\",\"North\",\"Open Side\",\"South\",\"West\"\}
+
+and 
+
+$E_{ji} \overset{i.i.d.}{\sim} \mathcal{N} (0, \sigma^2)\ $ for $i=2,...,5\ $ and $j = 1,2,...,n_i$
+
+Null hypothesis ($H_0$): 
+$\alpha_1$ = $\alpha_2$ = $\alpha_2$ = $\alpha_2$ = $0$
+
+The variance of the data can only be explained by random variance, so that the variance of each group is equal. We would expect the variance of group \"Open Side\":  $\alpha_3 \not= 0$. They seem to grow differently.
+
+##### b) A boxplot of the data looks as follows:
+
+<p style="text-align:center;"><img src="boxplot_ex7.png" alt="boxplotofdata" width="500"></p>
+
+##### Based on the boxplot, does it appear that the null hypothesis is true?
+
+No, $H_0$ is not true. The interquantile range (IQR) is different for each group and not equally distributed around the mean. 
+
+##### c) Fit an ANOVA model to the data and test the null hypothesis from a) on a significance level of 10%.
+
+```{r, echo = TRUE}
+daffodils <- read.csv("daffodils.csv", header = T, sep = ",")
+levels(daffodils$Side)
+
+fit1 <- (aov(data=daffodils, Length ~ Side))
+summary(fit1)
+
+```
+
+Given the 10% significance level of our test with the p-value of 0.0101 (< 0.1) we can reject $H_0$. 
+
+##### d) Does the ANOVA model fit well to the data? Perform a residual analysis.
+
+``` {r, echo = TRUE}
+# Tukey-Anscombe plot
+ggplot(data=fit1, aes(fit1$fitted.values, fit1$residuals)) +
+  geom_point() +
+  theme_bw() +
+  geom_line(aes(y=0, colour="red"), show.legend = FALSE) +
+  xlab("Fitted Values") +
+  ylab("Residuals")
+  
+#Residual analysis
+fit1$residuals
+# QQ-Plot
+plot(fit1, which = c(2))
+
+```
+The Tukey-Ascombe plot shows the spread of fitted values are quiet alike, but ???Open??? does seem to be more "condensed". Though the Q-Q plot for the residuals seems not to suggest something significant. So overall the ANOVA model (with only ???Open??? with a significant effect) fits quite well.
+
+##### e) Which locations (sides of the building and open area) are not significantly different on a 5% level? Use Bonferroni adjusted pairwise t-tests.
+
+``` {r, echo = TRUE}
+pairwise.t.test(daffodils$Length, daffodils$Side, p.adjust.method = "bonferroni")
+
+
+```
+Not signficantly different (P > 0.05): \"East\" & all, \"North\" & all,\"Open\" & \"South\", \"South\" & \"West\" 
+
+$\rightarrow\ $ only \"Open\"&\"South\" is significantly different!
 
 
 # Exercise 8 (by Jacqueline Wyss)
