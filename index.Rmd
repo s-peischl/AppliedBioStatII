@@ -16,7 +16,7 @@ library(grid)
 library(gridExtra)
 ```
 
-Instead of presentations we will present our solutions here. This is a first preliminary version of this homepage and I used the Solutions students handeded in. 
+Instead of presentations we will present our Solutions here. This is a first preliminary version of this homepage and I used the Solutions students handeded in. 
 
 # Exercise 2 (by Stephan Peischl)
 
