@@ -7,10 +7,104 @@ output: html_document
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
+library(ggplot2)
+library(gtable)
+library(grid)
+library(gridExtra)
 ```
 
+Instead of presentations we will present our solutions here. This is a first preliminary version of this homepage and I used the Solutions students handeded in. 
 
-# Exercise 3
+# Exercise 2 (by Stephan Peischl)
+
+In this exercise, we consider four data sets constructed by the British statistician Frank Anscombe. Each data set consists of a response variable Y and an explanatory variable X.
+The data sets can be made available in R using the command
+
+```{r}
+data(anscombe)
+```
+After this, a data frame anscombe is available with the four variable pairs (x1, y1), (x2, y2), (x3, y3), and (x4, y4).
+
+## Solution
+
+a) We first plot the four data sets as scatterplots and add a linear regression line. I use ggplot2 here:
+
+```{r }
+data(anscombe)
+p1 = ggplot(data = anscombe,aes(x=x1,y=y1)) + 
+  geom_point() +
+  geom_smooth(method = lm) +
+  theme_classic()
+
+p2 = ggplot(data = anscombe,aes(x=x2,y=y2)) + 
+  geom_point() +
+  geom_smooth(method = lm) +
+  theme_classic()
+
+p3 = ggplot(data = anscombe,aes(x=x3,y=y3)) + 
+  geom_point() +
+  geom_smooth(method = lm) +
+  theme_classic()
+
+p4 = ggplot(data = anscombe,aes(x=x4,y=y4)) + 
+  geom_point() +
+  geom_smooth(method = lm) +
+  theme_classic()
+
+
+grid.arrange(p1,p2,p3,p4,nrow = 2)
+```
+
+In base R the plots can be done like this:
+
+```{r}
+model1 = lm(y1~x1,data=anscombe)
+model2 = lm(y2~x2,data=anscombe)
+model3 = lm(y3~x3,data=anscombe)
+model4 = lm(y4~x4,data=anscombe)
+
+par(mfrow=c(2,2))
+
+plot(anscombe$x1,anscombe$y1,xlab="x1",ylab="y1")
+abline(model1)
+
+plot(anscombe$x2,anscombe$y2,xlab="x2",ylab="y2")
+abline(model2)
+
+plot(anscombe$x3,anscombe$y3,xlab="x3",ylab="y3")
+abline(model3)
+
+plot(anscombe$x4,anscombe$y4,xlab="x4",ylab="y4")
+abline(model4)
+```
+
+These models look pretty similar but the underlying data looks very different. You can see that only in the first case a linear regression is reasonable. In the second case the relationship between X and Y is not linear but quadratic. In the third case an outlier has a huge influence on the estimated parameters. In the forth case the regression line is only dependent on one point.
+
+b) We next explore the fitted models in more detail. To do so, we can look at the summary of each model:
+
+```{r }
+summary(model1)
+summary(model2)
+```
+
+To make the comparsion easier, I extract the fitted parameters and store them in a data frame. I then use the knitr function kable to display it in a nice table format.
+
+```{r }
+model.params = data.frame(
+  Model1 = c(model1$coefficients,summary(model1)$sigma,summary(model1)$r.squared),
+  Model2 = c(model2$coefficients,summary(model2)$sigma,summary(model2)$r.squared),
+  Model3 = c( model3$coefficients,summary(model3)$sigma,summary(model3)$r.squared),
+  Model4 =c(model4$coefficients,summary(model4)$sigma,summary(model4)$r.squared))
+
+rownames(model.params)= c("intercept","slope","sigma","R2")
+
+knitr::kable(model.params)
+```
+
+For all four models, the estimated parameters as well as $R^2$ are almost identical. It is absolutely necessary to always make a visual check of the data and the fitted model. If the linearity assumption does not hold, quality measures such as $R^2$ have little meaning. 
+
+
+# Exercise 3 (by Chiara Durrer)
 
 For Ex 3a the data is read in and a simple linear model built
 
@@ -39,7 +133,8 @@ summary(farm.fit3)
 Comparing the three models it get clear that the cows are highly influencing the amount of money even if there is a non-significant variable as the acres
 
 
-# Excercise 4:
+
+# Excercise 4 (by Chiara Durrer)
 In this exercise, we again consider the air pollution data set presented in the lecture. In
 a study on the contribution of air pollution to mortality, General Motors collected data from 60 US cities. The **dependent** variable is the age adjusted mortality (variable **Mortality**). The data includes variables measuring demographic characteristics of the cities, variables measuring climate characteristics, and variables recording the pollution potential of three different air pollutants.
 
@@ -100,7 +195,8 @@ Watch out for dependent variables!!!
 
 
 
-# Excercise 5 - Mauro Gwerder, Chiara Durrer, Nagabhushana Priyanka
+
+# Excercise 5 (by Mauro Gwerder, Chiara Durrer, Nagabhushana Priyanka)
 
 On February 9, 2014, Swiss voters accepted the initiative "Against Mass Immigration". In
 this exercise, we will try to predict the acceptance in each canton based on geographic and demographic
@@ -248,7 +344,9 @@ This last model is the same as our model from the beginning. As the anova-tests 
   - likelihood-ratio-test (has p-values, only works with nested models)  
   - AIC Backward- or Forward-selection (also works with non-nested models, no p-values)
 
-# Exercise 7
+
+# Exercise 7 (by Jacqueline Wyss)
+
 
 A researcher collected daffodils from four sides of a building and from an open area nearby.
 She wondered whether the average stem length of a daffodil depends on its location. The data set is
@@ -307,7 +405,8 @@ help("pairwise.t.test")
 The t-test reveals that all locations execept Open and South don't differ from each other
 given a significance level of 5%.
 
-# Exercise 8
+
+# Exercise 8 (by Jacqueline Wyss)
 
 A researcher studied the flexibility of women after taking different sports courses. The
 
