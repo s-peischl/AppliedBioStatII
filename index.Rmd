@@ -16,7 +16,7 @@ library(grid)
 library(gridExtra)
 ```
 
-Instead of presentations we will present our Solutions here. This is a first preliminary version of this homepage and I used the Solutions students handeded in. 
+Instead of presentations we will present our solutions here. This is a first preliminary version of this homepage and I used the Solutions students handeded in. 
 
 # Exercise 2 (by Stephan Peischl)
 
@@ -34,6 +34,7 @@ a) We first plot the four data sets as scatterplots and add a linear regression 
 
 ```{r }
 data(anscombe)
+
 p1 = ggplot(data = anscombe,aes(x=x1,y=y1)) + 
   geom_point() +
   geom_smooth(method = lm) +
@@ -204,6 +205,7 @@ Watch out for dependent variables!!!
 On February 9, 2014, Swiss voters accepted the initiative "Against Mass Immigration". In
 this exercise, we will try to predict the acceptance in each canton based on geographic and demographic
 data.
+
 
 ```{r}
 immi <- read.table("massimmigration.csv", header = TRUE, sep = '\t')
@@ -530,3 +532,121 @@ c) What is the pooled standard deviation, spool?
 
 spool^2 = the mean square of errors
 -> spool = sqrt(mean square of errors) = sqrt(0.5799)
+
+# Exercise 9
+In a study of the dietary treatment of anemia in cattle, 144 cows were randomly divided into four treatment groups A, B, C, and D; A was the control group.  After a year of treatment, blood samples were drawn and assayed for selenium.  The following table shows the mean selenium concentrations in $\mu g / dl$. The MS(within) from the ANOVA was $2.071$.
+
+| Group       | Mean           | $n_i$  |
+| ------------- |:-------------:| -----:|
+| A      | 0.8 | 36 |
+| B      | 5.4     |   36 |
+| C | 6.2     |    36 |
+| D | 5.0     |    36 |
+
+Compute three Bonferroni-adjusted confidence intervals comparing diets B, C, and D to the control (diet A) for a FWER of $\overline{\alpha} = 0.05$.  Which comparison-wise significance level $\alpha$ do you have to use to calculate the confidence intervals?
+
+  We use the Bonferroni-adjusted significance level $\alpha = \overline{\alpha}/3 = 0.05/3$ and build confidence intervals for cell means $\mu_i$ using the empirical means of our data
+  $$
+  \left[\overline{y}_{.i} - \Phi^{-1}(1-\alpha/2) \frac{s\_{pool}}{\sqrt{n_i}}, \overline{y}_{.i} + \Phi^{-1}(1-\alpha/2) \frac{s_{pool}}{\sqrt{n_i}}\right]
+  $$
+  where $s_{pool} = \hat{\sigma} = \sqrt{MS(within)}$.
+  We get:
+````{r, echo = TRUE}
+alpha <- 0.05/3
+z <- qnorm(1-alpha/2)
+spool <- sqrt(2.071)
+sqn <- sqrt(36)
+ciB <- c(5.4 - z*spool/sqn, 5.4 + z*spool/sqn)
+ciC <- c(6.2 - z*spool/sqn, 6.2 + z*spool/sqn)
+ciD <- c(5.0 - z*spool/sqn, 5.0 + z*spool/sqn)
+list(ciB, ciC, ciD)
+````
+  
+  Since not one confidence interval included the control group's mean (0.8), we can conclude with $95\%$ confidence that all treatments significantly heigthened the mean selenium concentration in the cows' blood.
+  
+# Exercise 10 (by Drobnjakovic Milos, Gabriel Zala, Schowing Thibault)
+
+Researchers measured the yield of 5 crop species treated with 4 fertilizers. You find the measurements in the file fertilizer.dat on ILIAS.
+
+
+a) Read in the data set and draw an interaction plot.
+R hint: since the factor levels are not encoded as strings, you first have to explicitely convert the variables CropSpecies and Fertilizer to factors.
+
+
+
+```{r}
+library(car)
+data <- read.table("fertilizer.dat", header=TRUE)
+data$Fertilizer <- as.factor(data$Fertilizer)
+data$CropSpecies <- as.factor(data$CropSpecies)
+
+interaction.plot(data$Fertilizer, data$CropSpecies, data$Yield)
+
+```
+
+
+We see that the five species act the same with the different fertilizer (they all increase similarly). There might be an interaction. 
+
+
+b) Fit an ANOVA model without interaction to the data set. Analyse the residuals. Does the model fit well? If not, can you think of a transformation that could make the fit better?
+
+
+```{r}
+data.fit <- lm(Yield ~ Fertilizer + CropSpecies, data = data)
+plot(fitted(data.fit), resid(data.fit), main = "Tukey Anscombe plot")
+qqPlot(resid(data.fit), dist = "norm", mean = mean(resid(data.fit)), sd = sd(resid(data.fit)), main = "qqplot")
+
+
+```
+
+
+
+
+The two plots demonstrate a poor fit. In the Tukey Anscombe plot we can clearly see a pattern between the residuals and the fitted values that should be randomly distributed if the model assumptions were right. The qqPlot is right skewed which suggests that we should try a log transform.
+
+```{r}
+data.fit2 <- lm(log(Yield) ~ Fertilizer + CropSpecies, data = data)
+plot(fitted(data.fit2), resid(data.fit2), main = "Tukey Anscombe plot")
+qqPlot(resid(data.fit2), dist = "norm", mean = mean(resid(data.fit2)), sd = sd(resid(data.fit2)), main = "qqplot")
+```
+
+
+It looks much better!
+
+c) Add an interaction term to the model from task b). Is there a significant interaction?
+
+
+
+```{r}
+
+data.fit3 <- lm(log(Yield) ~ Fertilizer*CropSpecies, data = data)
+
+#Note: if we try to compare with the first model, R will show an error because we need to have the log() in both.
+anova(data.fit2, data.fit3)
+```
+
+Value of the F statistic is not within the range of rejection, hence the interaction is not significant.
+
+d) Beginning from the model from task c), perform a model selection by remove non-significant terms. In which order do you have to test the terms? With which model do you end up?
+
+
+As we saw in point c, the model with the interaction term is not significant. So, we can already remove that and start again with the following model: 
+
+
+```{r}
+data.fit2 <- lm(log(Yield) ~ Fertilizer + CropSpecies, data = data)
+```
+
+
+Next we need to check the significance of Fertilizer and CropSpecies:
+
+
+```{r}
+data.fitFertilizer <- lm(log(Yield) ~ Fertilizer, data = data)
+summary(data.fitFertilizer)
+data.fitCropSpecies <- lm(log(Yield) ~ CropSpecies, data = data)
+summary(data.fitCropSpecies)
+```
+
+From this we conclude that both variables are significant. Therefore, our best model is: 
+log(Yield) ~ Fertilizer + CropSpecies
